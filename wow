@@ -124,9 +124,15 @@ local function validateKey()
             isAuthenticated = true
             keyFeedback.Text = "✅ คีย์ถูกต้อง! กำลังเปิด UI..."
             keyFeedback.TextColor3 = Color3.fromRGB(100, 255, 100)
-            task.wait(1)
-            keyFrame.Visible = false
-            -- Will show main frame after it's created
+            
+            -- Use spawn to avoid blocking and show UI immediately
+            task.spawn(function()
+                task.wait(1)
+                keyFrame.Visible = false
+                mainFrame.Visible = true
+                minimizedFrame.Visible = false
+                refreshList()
+            end)
             return
         end
     end
@@ -597,11 +603,4 @@ closeBtn.Activated:Connect(toggleUI)
 openBtn.Activated:Connect(toggleUI)
 
 -- initial load (only after authentication)
-task.spawn(function()
-    repeat task.wait() until isAuthenticated
-    -- Show main UI after authentication
-    keyFrame.Visible = false
-    mainFrame.Visible = true
-    minimizedFrame.Visible = false
-    refreshList()
-end)
+-- Remove the duplicate authentication check since it's now handled in validateKey()
