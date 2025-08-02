@@ -126,8 +126,7 @@ local function validateKey()
             keyFeedback.TextColor3 = Color3.fromRGB(100, 255, 100)
             task.wait(1)
             keyFrame.Visible = false
-            mainFrame.Visible = true
-            minimizedFrame.Visible = false -- Make sure minimized frame is hidden initially
+            -- Will show main frame after it's created
             return
         end
     end
@@ -600,5 +599,9 @@ openBtn.Activated:Connect(toggleUI)
 -- initial load (only after authentication)
 task.spawn(function()
     repeat task.wait() until isAuthenticated
+    -- Show main UI after authentication
+    keyFrame.Visible = false
+    mainFrame.Visible = true
+    minimizedFrame.Visible = false
     refreshList()
 end)
