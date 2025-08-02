@@ -8,11 +8,141 @@ local backpack = player:WaitForChild("Backpack")
 local char = player.Character or player.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
 
+-- Key system variables
+local validKeys = {
+    "xprohub"
+}
+local isAuthenticated = false
+local isUIOpen = true -- UI state variable
+
 -- create ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "PurgeHubCloneDemo"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
+
+-- Key authentication frame
+local keyFrame = Instance.new("Frame")
+keyFrame.Name = "KeyFrame"
+keyFrame.Size = UDim2.new(0, 400, 0, 250)
+keyFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
+keyFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+keyFrame.BackgroundTransparency = 0.05
+keyFrame.BorderSizePixel = 0
+keyFrame.Parent = screenGui
+keyFrame.Visible = true
+
+-- add corner to key frame
+local keyCorner = Instance.new("UICorner")
+keyCorner.CornerRadius = UDim.new(0, 15)
+keyCorner.Parent = keyFrame
+
+-- add stroke to key frame
+local keyStroke = Instance.new("UIStroke")
+keyStroke.Color = Color3.fromRGB(100, 200, 255)
+keyStroke.Thickness = 2
+keyStroke.Transparency = 0.3
+keyStroke.Parent = keyFrame
+
+-- key title
+local keyTitle = Instance.new("TextLabel")
+keyTitle.Parent = keyFrame
+keyTitle.Size = UDim2.new(1, -20, 0, 60)
+keyTitle.Position = UDim2.new(0, 10, 0, 10)
+keyTitle.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+keyTitle.BackgroundTransparency = 0.2
+keyTitle.Text = "🔐 XPRO Hub การรับรองความถูกต้อง"
+keyTitle.TextColor3 = Color3.fromRGB(100, 200, 255)
+keyTitle.TextScaled = true
+keyTitle.Font = Enum.Font.GothamBold
+
+-- add corner to key title
+local keyTitleCorner = Instance.new("UICorner")
+keyTitleCorner.CornerRadius = UDim.new(0, 10)
+keyTitleCorner.Parent = keyTitle
+
+-- key input box
+local keyInput = Instance.new("TextBox")
+keyInput.Parent = keyFrame
+keyInput.Size = UDim2.new(1, -20, 0, 50)
+keyInput.Position = UDim2.new(0, 10, 0, 85)
+keyInput.PlaceholderText = "🔑 กรอกคีย์เพื่อเข้าใช้งาน..."
+keyInput.ClearTextOnFocus = false
+keyInput.Text = ""
+keyInput.Font = Enum.Font.Gotham
+keyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+keyInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+keyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+keyInput.BackgroundTransparency = 0.1
+keyInput.BorderSizePixel = 0
+
+-- add corner to key input
+local keyInputCorner = Instance.new("UICorner")
+keyInputCorner.CornerRadius = UDim.new(0, 8)
+keyInputCorner.Parent = keyInput
+
+-- key submit button
+local keySubmit = Instance.new("TextButton")
+keySubmit.Parent = keyFrame
+keySubmit.Size = UDim2.new(1, -20, 0, 45)
+keySubmit.Position = UDim2.new(0, 10, 0, 145)
+keySubmit.Text = "✅ ยืนยันคีย์"
+keySubmit.Font = Enum.Font.GothamBold
+keySubmit.TextScaled = true
+keySubmit.TextColor3 = Color3.new(1, 1, 1)
+keySubmit.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+keySubmit.BackgroundTransparency = 0.1
+keySubmit.BorderSizePixel = 0
+
+-- add corner to key submit
+local keySubmitCorner = Instance.new("UICorner")
+keySubmitCorner.CornerRadius = UDim.new(0, 10)
+keySubmitCorner.Parent = keySubmit
+
+-- key feedback
+local keyFeedback = Instance.new("TextLabel")
+keyFeedback.Parent = keyFrame
+keyFeedback.Size = UDim2.new(1, -20, 0, 30)
+keyFeedback.Position = UDim2.new(0, 10, 0, 200)
+keyFeedback.BackgroundTransparency = 1
+keyFeedback.Text = "💡 ใส่คีย์ที่ถูกต้องเพื่อเข้าใช้งาน"
+keyFeedback.TextColor3 = Color3.fromRGB(255, 220, 120)
+keyFeedback.TextScaled = true
+keyFeedback.Font = Enum.Font.Gotham
+
+-- Key validation function
+local function validateKey()
+    local inputKey = keyInput.Text
+    if inputKey == "" then
+        keyFeedback.Text = "❌ กรุณากรอกคีย์"
+        keyFeedback.TextColor3 = Color3.fromRGB(255, 100, 100)
+        return
+    end
+    
+    for _, validKey in ipairs(validKeys) do
+        if inputKey == validKey then
+            isAuthenticated = true
+            keyFeedback.Text = "✅ คีย์ถูกต้อง! กำลังเปิด UI..."
+            keyFeedback.TextColor3 = Color3.fromRGB(100, 255, 100)
+            task.wait(1)
+            keyFrame.Visible = false
+            mainFrame.Visible = true
+            minimizedFrame.Visible = false -- Make sure minimized frame is hidden initially
+            return
+        end
+    end
+    
+    keyFeedback.Text = "❌ คีย์ไม่ถูกต้อง!"
+    keyFeedback.TextColor3 = Color3.fromRGB(255, 100, 100)
+end
+
+-- Connect key events
+keySubmit.Activated:Connect(validateKey)
+keyInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        validateKey()
+    end
+end)
 
 -- main frame
 local mainFrame = Instance.new("Frame")
@@ -23,6 +153,95 @@ mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.BackgroundTransparency = 0.1
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
+mainFrame.Visible = false -- Hidden until authenticated
+
+-- Minimized frame (collapsed state)
+local minimizedFrame = Instance.new("Frame")
+minimizedFrame.Name = "MinimizedFrame"
+minimizedFrame.Size = UDim2.new(0, 300, 0, 50)
+minimizedFrame.Position = UDim2.new(0, 10, 0, 10)
+minimizedFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+minimizedFrame.BackgroundTransparency = 0.1
+minimizedFrame.BorderSizePixel = 0
+minimizedFrame.Parent = screenGui
+minimizedFrame.Visible = false
+
+-- add corner to minimized frame
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 12)
+minCorner.Parent = minimizedFrame
+
+-- add stroke to minimized frame
+local minStroke = Instance.new("UIStroke")
+minStroke.Color = Color3.fromRGB(100, 200, 255)
+minStroke.Thickness = 1
+minStroke.Transparency = 0.5
+minStroke.Parent = minimizedFrame
+
+-- minimized title
+local minTitle = Instance.new("TextLabel")
+minTitle.Parent = minimizedFrame
+minTitle.Size = UDim2.new(0.7, 0, 1, 0)
+minTitle.Position = UDim2.new(0, 10, 0, 0)
+minTitle.BackgroundTransparency = 1
+minTitle.Text = "✨ XPRO Hub: โปรเสกของ V1"
+minTitle.TextColor3 = Color3.fromRGB(100, 200, 255)
+minTitle.TextScaled = true
+minTitle.Font = Enum.Font.GothamBold
+minTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+-- open menu button
+local openBtn = Instance.new("TextButton")
+openBtn.Parent = minimizedFrame
+openBtn.Size = UDim2.new(0.25, 0, 0.8, 0)
+openBtn.Position = UDim2.new(0.72, 0, 0.1, 0)
+openBtn.Text = "📋 เปิดเมนู"
+openBtn.Font = Enum.Font.GothamBold
+openBtn.TextScaled = true
+openBtn.TextColor3 = Color3.new(1, 1, 1)
+openBtn.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+openBtn.BackgroundTransparency = 0.1
+openBtn.BorderSizePixel = 0
+
+-- add corner to open button
+local openCorner = Instance.new("UICorner")
+openCorner.CornerRadius = UDim.new(0, 8)
+openCorner.Parent = openBtn
+
+-- enable dragging for minimized frame
+local minDragging = false
+local minDragStart, minStartPos, minDragInput
+
+minimizedFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or
+       input.UserInputType == Enum.UserInputType.Touch then
+        minDragging = true
+        minDragStart = input.Position
+        minStartPos = minimizedFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                minDragging = false
+            end
+        end)
+    end
+end)
+
+minimizedFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or
+       input.UserInputType == Enum.UserInputType.Touch then
+        minDragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if minDragging and input == minDragInput then
+        local delta = input.Position - minDragStart
+        minimizedFrame.Position = UDim2.new(
+            minStartPos.X.Scale, minStartPos.X.Offset + delta.X,
+            minStartPos.Y.Scale, minStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
 
 -- add corner rounding
 local mainCorner = Instance.new("UICorner")
@@ -78,10 +297,28 @@ title.Size = UDim2.new(1, -20, 0, 45)
 title.Position = UDim2.new(0, 10, 0, 10)
 title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 title.BackgroundTransparency = 0.3
-title.Text = "✨ Purge Hub: Clone Tool Demo"
+title.Text = "XPRO Hub: โปรเสกของ V1"
 title.TextColor3 = Color3.fromRGB(100, 200, 255)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
+
+-- close/minimize button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Parent = mainFrame
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -40, 0, 10)
+closeBtn.Text = "➖"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextScaled = true
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+closeBtn.BackgroundTransparency = 0.2
+closeBtn.BorderSizePixel = 0
+
+-- add corner to close button
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 6)
+closeCorner.Parent = closeBtn
 
 -- add corner to title
 local titleCorner = Instance.new("UICorner")
@@ -303,6 +540,9 @@ end
 
 -- clone and equip function
 local function doClone()
+    if not isAuthenticated then
+        return -- Prevent usage if not authenticated
+    end
     feedback.Text = ""
     local toolName = inputBox.Text or ""
     if toolName == "" then
@@ -316,28 +556,49 @@ local function doClone()
         feedback.Text = 'ไม่พบไอเท็มชื่อ "' .. toolName .. '"'
         return
     end
-    -- backup clone
-    local backup = original:Clone()
-    -- clear backpack
-    for _, t in ipairs(backpack:GetChildren()) do
-        if t:IsA("Tool") then
-            t:Destroy()
-        end
-    end
-    -- create clones and equip first
+    -- create clones without clearing backpack
     for i = 1, count do
-        local cloneTool = backup:Clone()
+        local cloneTool = original:Clone()
         cloneTool.Parent = backpack
         if i == 1 then
             humanoid:EquipTool(cloneTool)
         end
         task.wait(0.05)
     end
-    feedback.Text = ("สร้าง %d สำเนาของ \"%s\""):format(count, toolName)
+    feedback.Text = ("เพิ่ม %d สำเนาของ \"%s\" (รวมของเดิม)"):format(count, toolName)
+    -- refresh list to show updated tools
+    refreshList()
 end
 
 -- connect events
-refreshBtn.Activated:Connect(refreshList)
+refreshBtn.Activated:Connect(function()
+    if isAuthenticated then
+        refreshList()
+    end
+end)
 cloneBtn.Activated:Connect(doClone)
--- initial load
-refreshList()
+
+-- UI toggle functions
+local function toggleUI()
+    if isUIOpen then
+        -- Minimize UI
+        mainFrame.Visible = false
+        minimizedFrame.Visible = true
+        isUIOpen = false
+    else
+        -- Open UI
+        mainFrame.Visible = true
+        minimizedFrame.Visible = false
+        isUIOpen = true
+    end
+end
+
+-- Connect toggle events
+closeBtn.Activated:Connect(toggleUI)
+openBtn.Activated:Connect(toggleUI)
+
+-- initial load (only after authentication)
+task.spawn(function()
+    repeat task.wait() until isAuthenticated
+    refreshList()
+end)
