@@ -1,0 +1,343 @@
+-- LocalScript in StarterPlayer → StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local backpack = player:WaitForChild("Backpack")
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+
+-- create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PurgeHubCloneDemo"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- main frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 350, 0, 480)
+mainFrame.Position = UDim2.new(0.5, -175, 0.5, -240)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BackgroundTransparency = 0.1
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+-- add corner rounding
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 12)
+mainCorner.Parent = mainFrame
+
+-- add subtle stroke
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(80, 80, 80)
+mainStroke.Thickness = 1
+mainStroke.Transparency = 0.5
+mainStroke.Parent = mainFrame
+
+-- enable dragging
+local dragging = false
+local dragStart, startPos, dragInput
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or
+       input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or
+       input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- title label
+local title = Instance.new("TextLabel")
+title.Parent = mainFrame
+title.Size = UDim2.new(1, -20, 0, 45)
+title.Position = UDim2.new(0, 10, 0, 10)
+title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+title.BackgroundTransparency = 0.3
+title.Text = "✨ Purge Hub: Clone Tool Demo"
+title.TextColor3 = Color3.fromRGB(100, 200, 255)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+
+-- add corner to title
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = title
+
+-- add glow effect to title
+local titleStroke = Instance.new("UIStroke")
+titleStroke.Color = Color3.fromRGB(100, 200, 255)
+titleStroke.Thickness = 1
+titleStroke.Transparency = 0.7
+titleStroke.Parent = title
+
+-- tool name input
+local inputBox = Instance.new("TextBox")
+inputBox.Parent = mainFrame
+inputBox.Size = UDim2.new(1, -20, 0, 45)
+inputBox.Position = UDim2.new(0, 10, 0, 70)
+inputBox.PlaceholderText = "🔍 เลือกไอเท็มหรือพิมพ์ชื่อ"
+inputBox.ClearTextOnFocus = false
+inputBox.Text = ""
+inputBox.Font = Enum.Font.Gotham
+inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+inputBox.BackgroundTransparency = 0.2
+inputBox.BorderSizePixel = 0
+
+-- add corner to input
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 8)
+inputCorner.Parent = inputBox
+
+-- add stroke to input
+local inputStroke = Instance.new("UIStroke")
+inputStroke.Color = Color3.fromRGB(70, 70, 70)
+inputStroke.Thickness = 1
+inputStroke.Transparency = 0.5
+inputStroke.Parent = inputBox
+
+-- clone count input
+local countBox = Instance.new("TextBox")
+countBox.Parent = mainFrame
+countBox.Size = UDim2.new(1, -20, 0, 45)
+countBox.Position = UDim2.new(0, 10, 0, 125)
+countBox.PlaceholderText = "🔢 จำนวนสำเนา (1–9)"
+countBox.ClearTextOnFocus = false
+countBox.Text = "9"
+countBox.Font = Enum.Font.Gotham
+countBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+countBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+countBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+countBox.BackgroundTransparency = 0.2
+countBox.BorderSizePixel = 0
+
+-- add corner to count box
+local countCorner = Instance.new("UICorner")
+countCorner.CornerRadius = UDim.new(0, 8)
+countCorner.Parent = countBox
+
+-- add stroke to count box
+local countStroke = Instance.new("UIStroke")
+countStroke.Color = Color3.fromRGB(70, 70, 70)
+countStroke.Thickness = 1
+countStroke.Transparency = 0.5
+countStroke.Parent = countBox
+
+-- refresh list button
+local refreshBtn = Instance.new("TextButton")
+refreshBtn.Parent = mainFrame
+refreshBtn.Size = UDim2.new(1, -20, 0, 40)
+refreshBtn.Position = UDim2.new(0, 10, 0, 180)
+refreshBtn.Text = "🔄 โหลดรายการไอเท็ม"
+refreshBtn.Font = Enum.Font.GothamBold
+refreshBtn.TextScaled = true
+refreshBtn.TextColor3 = Color3.new(1, 1, 1)
+refreshBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+refreshBtn.BackgroundTransparency = 0.1
+refreshBtn.BorderSizePixel = 0
+
+-- add corner to refresh button
+local refreshCorner = Instance.new("UICorner")
+refreshCorner.CornerRadius = UDim.new(0, 8)
+refreshCorner.Parent = refreshBtn
+
+-- add stroke to refresh button
+local refreshStroke = Instance.new("UIStroke")
+refreshStroke.Color = Color3.fromRGB(90, 90, 90)
+refreshStroke.Thickness = 1
+refreshStroke.Transparency = 0.5
+refreshStroke.Parent = refreshBtn
+
+-- list frame
+local listFrame = Instance.new("ScrollingFrame")
+listFrame.Parent = mainFrame
+listFrame.Size = UDim2.new(1, -20, 0, 170)
+listFrame.Position = UDim2.new(0, 10, 0, 230)
+listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+listFrame.ScrollBarThickness = 4
+listFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+listFrame.BackgroundTransparency = 0.2
+listFrame.BorderSizePixel = 0
+listFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 200, 255)
+
+-- add corner to list frame
+local listCorner = Instance.new("UICorner")
+listCorner.CornerRadius = UDim.new(0, 8)
+listCorner.Parent = listFrame
+
+-- add stroke to list frame
+local listStroke = Instance.new("UIStroke")
+listStroke.Color = Color3.fromRGB(70, 70, 70)
+listStroke.Thickness = 1
+listStroke.Transparency = 0.5
+listStroke.Parent = listFrame
+
+local uiList = Instance.new("UIListLayout")
+uiList.Parent = listFrame
+uiList.SortOrder = Enum.SortOrder.LayoutOrder
+uiList.Padding = UDim.new(0, 4)
+
+-- clone button
+local cloneBtn = Instance.new("TextButton")
+cloneBtn.Parent = mainFrame
+cloneBtn.Size = UDim2.new(1, -20, 0, 50)
+cloneBtn.Position = UDim2.new(0, 10, 0, 410)
+cloneBtn.Text = "⚡ สร้างสำเนาใน hotbar"
+cloneBtn.Font = Enum.Font.GothamBold
+cloneBtn.TextScaled = true
+cloneBtn.TextColor3 = Color3.new(1, 1, 1)
+cloneBtn.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+cloneBtn.BackgroundTransparency = 0.1
+cloneBtn.BorderSizePixel = 0
+
+-- add corner to clone button
+local cloneCorner = Instance.new("UICorner")
+cloneCorner.CornerRadius = UDim.new(0, 10)
+cloneCorner.Parent = cloneBtn
+
+-- add glow effect to clone button
+local cloneStroke = Instance.new("UIStroke")
+cloneStroke.Color = Color3.fromRGB(100, 200, 255)
+cloneStroke.Thickness = 2
+cloneStroke.Transparency = 0.3
+cloneStroke.Parent = cloneBtn
+
+-- feedback label
+local feedback = Instance.new("TextLabel")
+feedback.Parent = mainFrame
+feedback.Size = UDim2.new(1, -20, 0, 15)
+feedback.Position = UDim2.new(0, 10, 0, 465)
+feedback.BackgroundTransparency = 1
+feedback.Text = ""
+feedback.TextColor3 = Color3.fromRGB(255, 220, 120)
+feedback.TextScaled = true
+feedback.Font = Enum.Font.Gotham
+
+-- currently selected tool name
+local selectedName
+
+-- refresh list function
+local function refreshList()
+    for _, child in ipairs(listFrame:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    local tools = {}
+    for _, tool in ipairs(backpack:GetChildren()) do
+        if tool:IsA("Tool") then
+            table.insert(tools, tool)
+        end
+    end
+    for i, tool in ipairs(tools) do
+        local btn = Instance.new("TextButton")
+        btn.Parent = listFrame
+        btn.LayoutOrder = i
+        btn.Size = UDim2.new(1, -10, 0, 35)
+        btn.Position = UDim2.new(0, 5, 0, 0)
+        btn.Text = "🔧 " .. tool.Name .. " (ช่อง " .. i .. ")"
+        btn.Font = Enum.Font.Gotham
+        btn.TextScaled = true
+        btn.TextColor3 = Color3.new(1, 1, 1)
+        btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        btn.BackgroundTransparency = 0.2
+        btn.BorderSizePixel = 0
+        
+        -- add corner to tool button
+        local btnCorner = Instance.new("UICorner")
+        btnCorner.CornerRadius = UDim.new(0, 6)
+        btnCorner.Parent = btn
+        
+        -- add stroke to tool button
+        local btnStroke = Instance.new("UIStroke")
+        btnStroke.Color = Color3.fromRGB(80, 80, 80)
+        btnStroke.Thickness = 1
+        btnStroke.Transparency = 0.6
+        btnStroke.Parent = btn
+        
+        btn.Activated:Connect(function()
+            selectedName = tool.Name
+            inputBox.Text = tool.Name
+            for _, c in ipairs(listFrame:GetChildren()) do
+                if c:IsA("TextButton") then 
+                    c.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                    c.BackgroundTransparency = 0.2
+                    if c:FindFirstChild("UIStroke") then
+                        c.UIStroke.Color = Color3.fromRGB(80, 80, 80)
+                    end
+                end
+            end
+            btn.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+            btn.BackgroundTransparency = 0.1
+            if btn:FindFirstChild("UIStroke") then
+                btn.UIStroke.Color = Color3.fromRGB(100, 200, 255)
+            end
+        end)
+    end
+    listFrame.CanvasSize = UDim2.new(0, 0, 0, uiList.AbsoluteContentSize.Y + 8)
+end
+
+-- clone and equip function
+local function doClone()
+    feedback.Text = ""
+    local toolName = inputBox.Text or ""
+    if toolName == "" then
+        feedback.Text = "กรุณาเลือกหรือพิมพ์ชื่อไอเท็ม"
+        return
+    end
+    local count = tonumber(countBox.Text) or 9
+    count = math.clamp(count, 1, 9)
+    local original = backpack:FindFirstChild(toolName)
+    if not original then
+        feedback.Text = 'ไม่พบไอเท็มชื่อ "' .. toolName .. '"'
+        return
+    end
+    -- backup clone
+    local backup = original:Clone()
+    -- clear backpack
+    for _, t in ipairs(backpack:GetChildren()) do
+        if t:IsA("Tool") then
+            t:Destroy()
+        end
+    end
+    -- create clones and equip first
+    for i = 1, count do
+        local cloneTool = backup:Clone()
+        cloneTool.Parent = backpack
+        if i == 1 then
+            humanoid:EquipTool(cloneTool)
+        end
+        task.wait(0.05)
+    end
+    feedback.Text = ("สร้าง %d สำเนาของ \"%s\""):format(count, toolName)
+end
+
+-- connect events
+refreshBtn.Activated:Connect(refreshList)
+cloneBtn.Activated:Connect(doClone)
+-- initial load
+refreshList()
